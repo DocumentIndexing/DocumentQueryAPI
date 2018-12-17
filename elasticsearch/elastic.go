@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
+	"searchQuery/log"
 )
 
 var elasticURL string
@@ -12,14 +13,14 @@ func Setup(url string) {
 	elasticURL = url
 }
 
-func MultiSearch(index string, docType string, request []byte) ([]byte, error) {
+func MultiSearch(index string, docType string, request []byte, pretty bool) ([]byte, error) {
 	action := "_msearch"
-	return post(index, docType, action, request)
+	return post(index, docType, action, request, pretty)
 }
 
-func Search(index string, docType string, request []byte) ([]byte, error) {
+func Search(index string, docType string, request []byte, pretty bool) ([]byte, error) {
 	action := "_search"
-	return post(index, docType, action, request)
+	return post(index, docType, action, request, pretty)
 }
 
 func buildContext(index string, docType string) string {
@@ -37,12 +38,21 @@ func GetStatus() ([]byte, error) {
 	return get("_cat", "health", "", nil)
 }
 
-func post(index string, docType string, action string, request []byte) ([]byte, error) {
+func post(index string, docType string, action string, request []byte, pretty bool) ([]byte, error) {
 	reader := bytes.NewReader(request)
-	req, err := http.NewRequest("POST", elasticURL+buildContext(index, docType)+action, reader)
+	prettyUrl := ""
+	if pretty {
+		prettyUrl = "?pretty=true"
+	}
+	url := elasticURL + buildContext(index, docType) + action + prettyUrl
+	log.Debug("URL", log.Data{"url": url})
+	req, err := http.NewRequest("POST", url, reader)
+
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Content-Type", "application/json")
+
 	// For control over HTTP client headers,
 	// redirect policy, and other settings,
 	// create a Client
@@ -56,8 +66,9 @@ func post(index string, docType string, action string, request []byte) ([]byte, 
 	if err != nil {
 		return nil, err
 	}
-	response, err := ioutil.ReadAll(resp.Body)
 
+	response, err := ioutil.ReadAll(resp.Body)
+	log.Debug("Reader", log.Data{"Data": string(response)})
 	return response, err
 }
 

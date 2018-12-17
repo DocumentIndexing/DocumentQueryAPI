@@ -8,11 +8,10 @@ import (
 	"searchQuery/handlers"
 	"searchQuery/log"
 	"time"
-
 )
 
 var server *http.Server
-var elasticURL = getEnv("ELASTIC_URL", "http://localhost:9200/")
+var elasticURL = getEnv("ELASTIC_URL", "http://127.0.0.1.xip.io/")
 var bindAddr = getEnv("PORT", "10001")
 
 func getEnv(key string, defaultValue string) string {
@@ -25,7 +24,7 @@ func getEnv(key string, defaultValue string) string {
 
 func main() {
 	log.Namespace = "searchQuery"
-	healthCheckEndpoint := 	getEnvironmentVariable("HEALTHCHECK_ENDPOINT", "/healthcheck")
+	healthCheckEndpoint := getEnvironmentVariable("HEALTHCHECK_ENDPOINT", "/healthcheck")
 	log.Debug("Starting server", log.Data{"Port": bindAddr, "ElasticSearchUrl": elasticURL})
 
 	// Setup libraries and handlers
@@ -38,6 +37,7 @@ func main() {
 	// Setup web handlers for the search query services
 	router := pat.New()
 	router.Get("/search", handlers.SearchHandler)
+	router.Post("/search", handlers.SearchHandler)
 	router.Get(healthCheckEndpoint, handlers.HealthCheckHandlerCreator())
 	server = &http.Server{
 		Addr:         ":" + bindAddr,
@@ -49,7 +49,6 @@ func main() {
 	if err := server.ListenAndServe(); err != nil {
 		log.ErrorC("Failed to bind to port address", err, log.Data{"Port": bindAddr})
 	}
-
 
 }
 func getEnvironmentVariable(name string, defaultValue string) string {

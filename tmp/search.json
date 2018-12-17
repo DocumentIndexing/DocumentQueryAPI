@@ -1,10 +1,9 @@
 {
   "_source": [
     "title",
-    "subtitle"
+    "subtitle",
+    "printType"
   ],
-  {{if .From}}"from" : {{.From}},{{end}}
-  {{if .Size}}"size" : {{.Size}},{{end}}
   "query": {
     "bool": {
       "must": {
@@ -54,21 +53,24 @@
             }
           ]
         }
-      }{{if .PrintType }},
-     "filter": [
-       {
-         "term": {
-           "printType": "{{.PrintType}}"
-         }
-       }
-     ]{{ end }}
+      },
+      "filter": [
+        {
+          "term": {
+            "printType": "book"
+          }
+        }
+      ]
     }
-  }{{ if .Highlight }},
+  },
   "highlight": {
     "fields": {
-      "title": {},
-      "subtitle": {},
-      "description": {}
+      "title": {
+      },
+      "subtitle": {
+      },
+      "description": {
+      }
     }
-  }{{ end }}
+  }
 }

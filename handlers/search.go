@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -16,16 +18,12 @@ import (
 )
 
 type searchRequest struct {
-	Term                string
-	From                int
-	Size                int
-	Types               []string
-	Index               string
-	Queries             []string
-	SortBy              string
-	AggregationField    string
-	Highlight           bool
-	Now                 string
+	Term      string
+	From      int
+	Size      int
+	PrintType string
+	Highlight bool
+	Now       string
 }
 
 var searchTemplates *template.Template
@@ -39,15 +37,6 @@ func SetupSearch() error {
 
 	searchTemplates = templates
 	return err
-}
-
-func (sr searchRequest) HasQuery(query string) bool {
-	for _, q := range sr.Queries {
-		if q == query {
-			return true
-		}
-	}
-	return false
 }
 
 func formatMultiQuery(rawQuery []byte) ([]byte, error) {
@@ -75,11 +64,13 @@ func paramGet(params url.Values, key, defaultValue string) string {
 }
 
 func paramGetBool(params url.Values, key string, defaultValue bool) bool {
-	value := params.Get(key)
-	if len(value) < 1 {
+	val, ok := params[key]
+
+	if !ok {
 		return defaultValue
 	}
-	return value == "true"
+
+	return val[0] == "true" || val[0] == ""
 }
 
 func SearchHandler(w http.ResponseWriter, req *http.Request) {
@@ -93,35 +84,31 @@ func SearchHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	from, err := strconv.Atoi(paramGet(params, "from", "0"))
 	if err != nil {
-		log.Debug("Expected number only characters for paramater 'from'",
+		log.Debug("Expected number only characters for parameter 'from'",
 			log.Data{"From": paramGet(params, "from", "0"), "Error": err.Error()})
 		http.Error(w, "Invalid from paramater", http.StatusBadRequest)
 		return
 	}
 
-	var queries []string
-
-	if nil == params["query"] {
-		queries = []string{"search"}
-	} else {
-		queries = params["query"]
-	}
+	pretty := paramGetBool(params, "pretty", false)
 
 	reqParams := searchRequest{
-		Term:                params.Get("term"),
-		From:                from,
-		Size:                size,
-		Types:               params["type"],
-		Index:               params.Get("index"),
-		SortBy:              paramGet(params, "sort", "relevance"),
-		Queries:             queries,
-		AggregationField:    paramGet(params, "aggField", "_type"),
-		Highlight:           paramGetBool(params, "highlight", true),
-		Now:                 time.Now().UTC().Format(time.RFC3339),
+		Term:      params.Get("term"),
+		From:      from,
+		Size:      size,
+		Highlight: paramGetBool(params, "highlight", true),
+		Now:       time.Now().UTC().Format(time.RFC3339),
 	}
-	log.Debug("SearchHandler", log.Data{"queries": queries, "request": reqParams})
-	var doc bytes.Buffer
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		log.Debug("Expected number only characters for parameter 'from'",
+			log.Data{"From": paramGet(params, "from", "0"), "Error": err.Error()})
+		http.Error(w, "Invalid from paramater", http.StatusBadRequest)
+		return
+	}
+	json.Unmarshal(body, &reqParams)
 
+	var doc bytes.Buffer
 	err = searchTemplates.Execute(&doc, reqParams)
 
 	if err != nil {
@@ -130,19 +117,21 @@ func SearchHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//Put new lines in for ElasticSearch to determine the headers and the queries are detected
-	formattedQuery, err := formatMultiQuery(doc.Bytes())
-	if err != nil {
-		log.Debug("Failed to format query for elasticsearch", log.Data{"Error": err.Error()})
-		http.Error(w, "Failed to create query", http.StatusInternalServerError)
-		return
-	}
-	responseData, err := elasticsearch.MultiSearch("ons", "", formattedQuery)
+	////Put new lines in for ElasticSearch to determine the headers and the queries are detected
+	//formattedQuery, err := formatMultiQuery(doc.Bytes())
+	//if err != nil {
+	//	log.Debug("Failed to format query for elasticsearch", log.Data{"Error": err.Error()})
+	//	http.Error(w, "Failed to create query", http.StatusInternalServerError)
+	//	return
+	//}
+
+	responseData, err := elasticsearch.Search(params.Get("index"), "", doc.Bytes(), pretty)
 	if err != nil {
 		log.Debug("Failed to query elasticsearch", log.Data{"Error": err.Error()})
 		http.Error(w, "Failed to run search query", http.StatusInternalServerError)
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	w.Write(responseData)
 }

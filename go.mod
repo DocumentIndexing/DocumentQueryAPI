@@ -9,8 +9,6 @@ require (
 	github.com/mattn/go-colorable v0.0.0-20170312235756-a392f450ea64 // indirect
 	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b
-	github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d // indirect
-	github.com/smartystreets/goconvey v0.0.0-20181108003508-044398e4856c // indirect
 	github.com/tdewolff/buffer v0.0.0-20170115114128-df6253e2a2cd // indirect
 	github.com/tdewolff/minify v0.0.0-20170318180414-6206d455c1d4
 	github.com/tdewolff/parse v0.0.0-20170318180328-eaf18f3585c6 // indirect

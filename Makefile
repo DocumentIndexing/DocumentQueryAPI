@@ -23,8 +23,7 @@ package:
 	docker build . -f docker/Dockerfile -t guidof/documentindexer-searchquery
 
 
-
-deploy:
+deploy: package
 	docker push guidof/documentindexer-searchquery:latest
 
 
