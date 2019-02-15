@@ -27,7 +27,8 @@
             {
               "multi_match": {
                 "query": "{{.Term}}",
-                "type": "best_fields",
+                "type": "phrase",
+                "slop": 5,
                 "boost": 4,
                 "fields": [
                   "title^4",
@@ -41,8 +42,7 @@
             {
               "multi_match": {
                 "query": "{{.Term}}",
-                "type": "phrase",
-                "slop": 5,
+                "type": "best_fields",
                 "fields": [
                   "title^4",
                   "title.analyzed^2",
