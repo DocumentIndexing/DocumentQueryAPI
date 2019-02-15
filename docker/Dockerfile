@@ -8,11 +8,13 @@ RUN cd /src && \
 
 
 FROM alpine
+
+RUN apk add --update curl
 RUN adduser -S -D -H -h /app searchUser
 USER searchUser
 COPY --from=builder /build/linux-amd64 /app
 COPY --from=builder /src/templates /app/templates
 EXPOSE 10001
-ENV ELASTIC_URL=elasticSearch:9200
+ENV ELASTIC_URL=http://elasticSearch:9200/
 WORKDIR  /app
 CMD ["./searchQuery"]
