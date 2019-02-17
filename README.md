@@ -1,4 +1,4 @@
-SearchQuery
+Document Query API
 ================
 
 A Go application microservice to provide query functionality on to the Document Search
