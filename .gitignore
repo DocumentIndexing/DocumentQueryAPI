@@ -3,3 +3,4 @@ dp-search-query.nomad
 .idea
 /build/
 *.iml
+**/target/

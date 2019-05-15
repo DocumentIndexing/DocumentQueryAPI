@@ -2,7 +2,7 @@ FROM golang:alpine as builder
 
 RUN apk add --update make git gcc musl-dev
 
-ADD . /src
+ADD maven/src /src
 RUN cd /src && \
     go build -i -o /build/linux-amd64/searchQuery cmd/searchQuery/main.go
 
